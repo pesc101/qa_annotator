@@ -28,6 +28,9 @@ if dataset_file and annotator_name:
     # Progress bar + count
     st.progress(current_index / total_samples)
     st.caption(f"Annotated: {current_index} / {total_samples}")
+    st.text(
+        "Annotation Guide: Label the question as 'Context-depending' if the answer depends on the context and can be answered in another context with another true answer, otherwise label it as 'Unambiguous', when there is only one true answer.",
+    )
 
     if current_index >= total_samples:
         st.success("All annotations done!")
@@ -41,11 +44,12 @@ if dataset_file and annotator_name:
     with col_left:
         with st.form(key="annotation_form"):
             st.subheader("Original Question")
+
             st.text_area("Question", current_row["question"], height=100, disabled=True)
 
             orig_label = st.radio(
                 "Original Question Label",
-                ["Context-free", "Unambiguous"],
+                ["Context-depending", "Unambiguous"],
                 key="orig_label_radio",
             )
 
@@ -59,7 +63,7 @@ if dataset_file and annotator_name:
 
             gen_label = st.radio(
                 "Generated Question Label",
-                ["Context-free", "Unambiguous"],
+                ["Context-depending", "Unambiguous"],
                 key="gen_label_radio",
             )
 
@@ -96,4 +100,4 @@ if dataset_file and annotator_name:
 
     with col_right:
         st.subheader("Context")
-        st.markdown(current_row["context"])
+        st.text(current_row["context"])
