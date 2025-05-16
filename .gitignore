@@ -32,7 +32,6 @@ mlruns/*
 multirun/*
 
 ## Data folder
-data/
 docker/ollama
 docker/ollama_data
 docker/ollama-dc/ollama_data
