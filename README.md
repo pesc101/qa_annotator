@@ -35,9 +35,9 @@ Just push the changes in the result folder to the repo.
 |---------|------------|------|
 | Jan     | FinQA      |      |
 | Jan     | ConvFinQA  |      |
-| Max     | VQA        |      |
-| Max     | TATDQA     |      |
-| Isabell | FinQA      |      |
-| Isabell | ConvFinQA  |      |
+| Max     | VQA        |  <p align="center">✅</p>  |
+| Max     | TATDQA     |  <p align="center">✅</p>   |
+| Isabell | FinQA      |  <p align="center">✅</p>   |
+| Isabell | ConvFinQA  |  <p align="center">✅</p>   |
 | Kutay   | VQA        |      |
 | Kutay   | TATDQA     |      |
