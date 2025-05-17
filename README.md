@@ -33,8 +33,8 @@ Just push the changes in the result folder to the repo.
 
 | Name    | Dataset    | Done |
 |---------|------------|------|
-| Jan     | FinQA      |      |
-| Jan     | ConvFinQA  |      |
+| Jan     | FinQA      |   <p align="center">✅</p>   |
+| Jan     | ConvFinQA  |  <p align="center">✅</p>    |
 | Max     | VQA        |  <p align="center">✅</p>  |
 | Max     | TATDQA     |  <p align="center">✅</p>   |
 | Isabell | FinQA      |  <p align="center">✅</p>   |
