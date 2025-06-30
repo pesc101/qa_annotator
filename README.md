@@ -39,5 +39,12 @@ Just push the changes in the result folder to the repo.
 | Max     | TATDQA     |  <p align="center">✅</p>   |
 | Isabell | FinQA      |  <p align="center">✅</p>   |
 | Isabell | ConvFinQA  |  <p align="center">✅</p>   |
-| Kutay   | VQA        |      |
-| Kutay   | TATDQA     |      |
+| Kutay   | VQA        |  <p align="center">✅</p>      |
+| Kutay   | TATDQA     |  <p align="center">✅</p>      |
+
+| Name    | Dataset    | Done |
+|---------|------------|------|
+| Jan     | DAXQA-1      |      |
+| Max     | DAXQA-2        |    |
+| Isabell | DAXQA-3      |    |
+| Kutay   | DAXQA-4        |        |
