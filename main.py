@@ -1,103 +1,111 @@
 import glob
 import os
-
+import ast
+import math
 import pandas as pd
 import streamlit as st
 
-# Wide layout
-st.set_page_config(layout="wide")
-st.title("Question Annotation Tool")
+# Wide layout for better visibility
+st.set_page_config(layout='wide')
+st.title('Question-Answer Annotation Tool')
 
-# Dataset selection
-dataset_files = glob.glob("./data/*.xlsx")
+# Dataset selection from CSV files in data/ folder
+dataset_files = glob.glob('data/*.csv')
 dataset_files = [os.path.basename(f) for f in dataset_files]
-dataset_file = st.selectbox("Select Dataset", dataset_files)
+dataset_file = st.selectbox('Select CSV Dataset', dataset_files)
 
-# Annotator name input
-annotator_name = st.text_input("Enter your name:", key="annotator_name")
+# Annotator info
+annotator_name = st.text_input('Annotator Name:')
+partition = st.selectbox('Your Partition (1-4)', ['1', '2', '3', '4'])
 
-if dataset_file and annotator_name:
-    df = pd.read_excel(f"data/{dataset_file}", engine="openpyxl")
-    st.session_state.setdefault("index", 0)
-    st.session_state.setdefault("orig_label", None)
-    st.session_state.setdefault("gen_label", None)
+if dataset_file and annotator_name and partition:
+    # Load the dataset
+    df = pd.read_csv(os.path.join('data', dataset_file))
+    total = len(df)
+    part = int(partition) - 1
+    per_partition = math.ceil(total / 4)
 
-    total_samples = len(df)
-    current_index = st.session_state["index"]
+    # Determine progress by reading existing annotations
+    os.makedirs('results', exist_ok=True)
+    out_file = os.path.join('results', f'annotations_{annotator_name}_{dataset_file}')
+    if os.path.exists(out_file):
+        res_df = pd.read_csv(out_file)
+        done = len(res_df)
+    else:
+        done = 0
 
-    # Progress bar + count
-    st.progress(current_index / total_samples)
-    st.caption(f"Annotated: {current_index} / {total_samples}")
-    st.text(
-        "Annotation Guide: Label the question as 'Context-depending' if the answer depends on the context and can be answered in another context with another true answer, otherwise label it as 'Unambiguous', when there is only one true answer.",
-    )
+    # Calculate current index for this partition
+    idx = part + done * 4
 
-    if current_index >= total_samples:
-        st.success("All annotations done!")
+    # Display progress
+    st.progress(done / per_partition)
+    st.caption(f'Annotated {done} of {per_partition} samples (partition {partition})')
+
+    # Check completion
+    if done >= per_partition or idx >= total:
+        st.success('Annotation complete for your partition!')
         st.stop()
 
-    current_row = df.iloc[current_index]
+    # Fetch current row
+    row = df.iloc[idx]
+    col1, col2 = st.columns([2, 3])
 
-    # Layout: Left = Questions + Buttons | Right = Context
-    col_left, col_right = st.columns([2, 3])
+    # Left: QA display and annotation
+    with col1:
+        st.subheader('Question')
+        st.write(row['question'])
+        st.subheader('Answer')
+        st.write(row['answer'])
+        st.subheader('Final Formula')
+        st.code(row['final_formula'])
+        with st.expander('Question Reasoning'):
+            st.write(row['question_reasoning'])
+        with st.expander('Answer Reasoning'):
+            st.write(row['answer_reasoning'])
 
-    with col_left:
-        with st.form(key="annotation_form"):
-            st.subheader("Original Question")
+        # Unique session keys to prevent double-writing
+        q_key = f"q_invalid_{idx}"
+        a_key = f"a_invalid_{idx}"
+        written_key = f"written_{idx}"
+        st.session_state.setdefault(q_key, False)
+        st.session_state.setdefault(a_key, False)
+        st.session_state.setdefault(written_key, False)
 
-            st.text_area("Question", current_row["question"], height=100, disabled=True)
+        # Annotation inputs
+        q_invalid = st.checkbox('Question does not make sense', key=q_key)
+        a_invalid = st.checkbox('Answer does not make sense or invalid', key=a_key)
 
-            orig_label = st.radio(
-                "Original Question Label",
-                ["Context-depending", "Unambiguous"],
-                key="orig_label_radio",
-            )
-
-            st.subheader("Generated Question")
-            st.text_area(
-                "Generated",
-                current_row["generated_question"],
-                height=100,
-                disabled=True,
-            )
-
-            gen_label = st.radio(
-                "Generated Question Label",
-                ["Context-depending", "Unambiguous"],
-                key="gen_label_radio",
-            )
-
-            submitted = st.form_submit_button("Submit Annotations")
-
-            if submitted:
-                result = pd.DataFrame(
-                    [
-                        {
-                            "dataset": dataset_file,
-                            "id": current_row["id"],
-                            "type": "original",
-                            "label": orig_label,
-                            "annotator": annotator_name,
-                        },
-                        {
-                            "dataset": dataset_file,
-                            "id": current_row["id"],
-                            "type": "generated",
-                            "label": gen_label,
-                            "annotator": annotator_name,
-                        },
-                    ]
-                )
-                out_file = f"results/annotations_{annotator_name}_{dataset_file}"
-
+        # On-click saves annotation
+        def submit_annotation():
+            if not st.session_state[written_key]:
+                result = pd.DataFrame([{ 
+                    'id': row.get('id', idx),
+                    'question': row['question'],
+                    'q_invalid': st.session_state[q_key],
+                    'a_invalid': st.session_state[a_key],
+                    'annotator': annotator_name
+                }])
+                # Append or create
                 if os.path.exists(out_file):
-                    result.to_csv(out_file, mode="a", header=False, index=False)
+                    result.to_csv(out_file, index=False, header=False, mode='a')
                 else:
                     result.to_csv(out_file, index=False)
+                st.session_state[written_key] = True
 
-                # Next sample
-                st.session_state["index"] += 1
+        st.button('Submit', key=f'submit_{idx}', on_click=submit_annotation)
 
-    with col_right:
-        st.subheader("Context")
-        st.text(current_row["context"])
+    # Right: render the raw table
+    with col2:
+        st.subheader('Table')
+        try:
+            outer = ast.literal_eval(row['table'])
+            inner = ast.literal_eval(outer.get('raw', outer))
+            if isinstance(inner, dict) and all(isinstance(v, dict) for v in inner.values()):
+                df_tbl = pd.DataFrame(inner)
+            else:
+                df_tbl = pd.DataFrame(list(inner.items()), columns=['Field', 'Value'])
+            # Cast to string to avoid serialization issues
+            df_tbl = df_tbl.astype(str)
+            st.table(df_tbl)
+        except Exception as e:
+            st.error(f'Failed to parse table: {e}')
